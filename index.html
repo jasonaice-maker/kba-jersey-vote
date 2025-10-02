@@ -1,0 +1,297 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Kenston Bombers Jersey Vote — Pick Your Top 2</title>
+  <style>
+    :root{
+      --bg:#0b1020;--card:#121935;--ink:#ffffff;--muted:#9fb0e6;
+      --accent:#002147;   /* navy */
+      --accent2:#b21f2d;  /* red */
+      --highlight:#7bbde5; /* Carolina blue */
+    }
+    *{box-sizing:border-box}
+    html,body{margin:0;height:100%;font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial,sans-serif;background:radial-gradient(1200px 800px at 10% -10%, var(--accent) 0%, var(--bg) 55%);}    
+    .wrap{max-width:1100px;margin:0 auto;padding:28px 18px 80px;color:var(--ink)}
+    header{display:flex;gap:12px;align-items:center;justify-content:space-between;margin-bottom:18px}
+    header h1{font-size:clamp(22px,3vw,34px);margin:0;letter-spacing:.3px;color:var(--highlight)}
+    .sub{color:var(--muted);font-size:14px}
+    .card{background:linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.03));border:1px solid rgba(255,255,255,.15);backdrop-filter: blur(8px);border-radius:18px;padding:16px}
+    .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
+    @media (max-width:700px){.grid{grid-template-columns:1fr}}
+
+    .design{position:relative;border-radius:16px;overflow:hidden;border:2px solid var(--accent);background:#0f1530}
+    .design img{width:100%;height:auto;object-fit:contain;display:block;}
+    .design .meta{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:rgba(0,33,71,.6)}
+    .tag{font-weight:700;letter-spacing:.4px;color:var(--highlight)}
+    .pick{appearance:none;width:22px;height:22px;border-radius:7px;border:2px solid var(--highlight);display:grid;place-items:center;cursor:pointer;}
+    .pick:checked{background:var(--highlight)}
+    .pick:checked::after{content:"✓";color:var(--accent);font-weight:800}
+
+    .toolbar{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;margin:14px 0 10px}
+    .toolbar .left{display:flex;gap:10px;align-items:center}
+    input[type="text"],input[type="password"]{background:#0e1738;border:1px solid rgba(255,255,255,.3);color:var(--ink);border-radius:10px;padding:10px 12px;outline:none;min-width:220px}
+    input::placeholder{color:#97a9e0}
+    button{background:linear-gradient(180deg,var(--accent2),var(--accent));border:none;color:var(--ink);font-weight:800;padding:12px 16px;border-radius:12px;cursor:pointer;box-shadow:0 6px 20px rgba(0,33,71,.35)}
+    button.alt{background:linear-gradient(180deg,var(--highlight),var(--accent));color:#001733}
+    button.ghost{background:transparent;border:1px solid rgba(255,255,255,.4);color:var(--ink)}
+
+    .toast{position:fixed;inset:auto 0 16px;display:flex;justify-content:center;pointer-events:none}
+    .toast span{background:#0b132e;color:var(--ink);padding:12px 16px;border:1px solid rgba(255,255,255,.2);border-radius:12px}
+
+    .hidden{display:none}
+    table{width:100%;border-collapse:collapse}
+    th,td{padding:10px 12px;border-bottom:1px solid rgba(255,255,255,.12);text-align:left}
+    th{color:var(--highlight);font-weight:600}
+    .pill{display:inline-block;padding:3px 8px;border-radius:999px;background:var(--accent);color:var(--ink);border:1px solid rgba(255,255,255,.18)}
+    .help{color:var(--muted);font-size:13px}
+    footer{margin-top:28px;color:var(--muted);font-size:13px;text-align:center}
+  </style>
+  <!--
+  ===============================
+  DEPLOY QUICK START
+  ===============================
+  OPTION A — Netlify Drop (fastest)
+  1) Save this file as index.html on your computer.
+  2) Go to https://app.netlify.com/drop and drag-drop the file.
+  3) Netlify gives you a live URL you can share with players.
+
+  OPTION B — GitHub Pages
+  1) Create a new GitHub repo (public) named anything you like.
+  2) Add this file as index.html and commit to the main branch.
+  3) In the repo: Settings → Pages → Build and deployment → Source: Deploy from a branch → Branch: main / root → Save.
+  4) Your site will appear at https://USERNAME.github.io/REPO-NAME
+
+  Google Drive image permissions
+  • Make sure each jersey image is shared to “Anyone with the link: Viewer”.
+  • Images are loaded via https://drive.google.com/uc?export=view&id=FILE_ID
+
+  Coach passcode convenience
+  • You can prefill the coach passcode by appending ?passcode=coach to your URL.
+    Example: https://yoursite.netlify.app/?passcode=coach
+  -->
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div>
+        <h1>Kenston Bombers Jersey Vote</h1>
+        <div class="sub">Pick your top <b>2</b> designs, then press <b>Submit Vote</b>.</div>
+      </div>
+      <div class="help">Coach view ➜ Results, CSV export, and Reset (passcode)</div>
+    </header>
+
+    <section class="card toolbar">
+      <div class="left">
+        <input id="playerName" type="text" placeholder="Your name (first & last)" />
+        <input id="accessCode" type="password" placeholder="Coach passcode (for results)" />
+      </div>
+      <div class="right" style="display:flex;gap:10px;align-items:center">
+        <button id="submitBtn">Submit Vote</button>
+        <button id="viewResultsBtn" class="ghost">View Results</button>
+      </div>
+    </section>
+
+    <section class="card">
+      <div id="designGrid" class="grid"></div>
+      <div class="help" style="margin-top:10px">You can select up to two designs. Click again to unselect.</div>
+    </section>
+
+    <section id="resultsCard" class="card hidden">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px">
+        <h2 style="margin:6px 0">Live Results</h2>
+        <div style="display:flex;gap:8px">
+          <button id="downloadCsvBtn" class="alt">Download CSV</button>
+          <button id="resetVotesBtn" class="ghost">Reset Votes</button>
+          <button id="closeResultsBtn" class="ghost">Close</button>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+        <div>
+          <table id="tallyTable">
+            <thead><tr><th>Design</th><th>Votes</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <div>
+          <table id="votesTable">
+            <thead><tr><th>Timestamp</th><th>Player</th><th>Pick 1</th><th>Pick 2</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <footer>
+      ⚾️ Images are being loaded directly from your Google Drive folder.
+    </footer>
+  </div>
+
+  <div id="toast" class="toast hidden"><span></span></div>
+
+<script>
+'use strict';
+
+/**********************
+ * CONFIG
+ **********************/
+// Extracted IDs from your shared folder
+const CONFIG = {
+  coachPasscode: "coach",
+  fileIds: [
+    "1s4Qk3TL7ZPr0c4aThd8J_BCa4T3jq0Qx", // Jersey 1
+    "1oA4F9j6nItWpjN7yLhEpPMmF6L3aB_4W", // Jersey 2
+    "1q2U4jlhK_Zw1tFdnYP4LrD8fPaQxgYVJ", // Jersey 3
+    "1JljPnxX4ZUdHMSyLM2SgFP4uT1RZk7Wc", // Jersey 4
+    "1B2dVwk1t7QF6nKzt6DJm2vLRlOhuPhuN", // Jersey 5
+    "1OxE2B5SliWEtFlXJ0gE2XnyuK4K1tfRg", // Jersey 6
+    "1jVYoR9NHJYgY7EoS05c9xJmWtTS3vU4R", // Jersey 7
+    "1wlCkU7RkkGFWGfD7t1qg4v3QKeJ7Z3PH", // Jersey 8
+    "1kZ3DhVJjH9rQh8Uo5QHj2O7aR9sG1yPn"  // Jersey 9
+  ]
+};
+
+// Build designs with Google Drive direct-view links
+CONFIG.designs = CONFIG.fileIds.map((id, idx) => ({
+  id: String.fromCharCode(65+idx),
+  label: `Design ${String.fromCharCode(65+idx)}`,
+  src: `https://drive.google.com/uc?export=view&id=${id}`
+}));
+
+/**********************
+ * UTILITIES
+ **********************/
+const qs = (s, el=document)=>el.querySelector(s);
+const qsa = (s, el=document)=>[...el.querySelectorAll(s)];
+function toast(msg){ const t=qs('#toast'); t.classList.remove('hidden'); t.firstElementChild.textContent=msg; clearTimeout(window.__tt); window.__tt=setTimeout(()=>t.classList.add('hidden'), 2200);}  
+function nowIso(){ return new Date().toISOString(); }
+function csvEscape(v){ if(v==null) return ""; const s = String(v).replace(/"/g, '""'); return /[",\r\n]/.test(s) ? '"'+s+'"' : s; }
+
+/**********************
+ * STORAGE
+ **********************/
+const STORAGE_KEY = 'jerseyVotes_v1';
+const store = {
+  read(){ try{ return JSON.parse(localStorage.getItem(STORAGE_KEY)) || { votes: [] }; }catch{ return { votes: [] }; }
+  },
+  write(data){ localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); },
+  addVote(v){ const data=this.read(); data.votes.push(v); this.write(data); },
+  hasVoted(name){ const data=this.read(); return data.votes.some(x=>x.name.trim().toLowerCase()===name.trim().toLowerCase()); },
+  reset(){ this.write({ votes: [] }); }
+};
+
+/**********************
+ * RENDER DESIGNS
+ **********************/
+const grid = qs('#designGrid');
+CONFIG.designs.forEach((d)=>{
+  const card = document.createElement('div');
+  card.className = 'design';
+  card.innerHTML = `
+    <img src="${d.src}" alt="${d.label}" onerror="this.style.opacity=.35;this.alt='(image not found)';"/>
+    <div class="meta">
+      <div class="tag">${d.label}</div>
+      <input type="checkbox" class="pick" data-id="${d.id}" aria-label="Pick ${d.label}">
+    </div>`;
+  grid.appendChild(card);
+});
+
+grid.addEventListener('change', (e)=>{
+  if(!e.target.matches('.pick')) return;
+  const picks = qsa('.pick:checked');
+  if(picks.length>2){
+    e.target.checked = false; 
+    toast('You can only select 2 designs.');
+  }
+});
+
+/**********************
+ * SUBMIT VOTE
+ **********************/
+qs('#submitBtn').addEventListener('click', ()=>{
+  const name = qs('#playerName').value.trim();
+  const picks = qsa('.pick:checked').map(el=>el.dataset.id);
+  if(!name){ toast('Please enter your name.'); return; }
+  if(picks.length!==2){ toast('Please select exactly 2 designs.'); return; }
+  if(store.hasVoted(name)){ toast('Looks like you already voted already.'); return; }
+
+  const vote = { ts: nowIso(), name, pick1: picks[0], pick2: picks[1] };
+  store.addVote(vote);
+  qs('#playerName').value=''; qsa('.pick:checked').forEach(x=>x.checked=false);
+  toast('Vote submitted! ✅');
+  if(!qs('#resultsCard').classList.contains('hidden')){
+    renderResults();
+  }
+});
+
+/**********************
+ * RESULTS (Coach view)
+ **********************/
+function canViewResults(){
+  const code = qs('#accessCode').value;
+  return code && code === CONFIG.coachPasscode;
+}
+
+function renderResults(){
+  const data = store.read();
+  const tally = Object.fromEntries(CONFIG.designs.map(d=>[d.id,0]));
+  data.votes.forEach(v=>{ tally[v.pick1]++; tally[v.pick2]++; });
+
+  const tb1 = qs('#tallyTable tbody');
+  tb1.innerHTML = '';
+  CONFIG.designs.forEach(d=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td><span class="pill">${d.label}</span></td><td>${tally[d.id]}</td>`;
+    tb1.appendChild(tr);
+  });
+
+  const tb2 = qs('#votesTable tbody');
+  tb2.innerHTML = '';
+  data.votes.slice().reverse().forEach(v=>{
+    const ts = new Date(v.ts).toString();
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${ts}</td><td>${v.name}</td><td>${v.pick1}</td><td>${v.pick2}</td>`;
+    tb2.appendChild(tr);
+  });
+}
+
+qs('#viewResultsBtn').addEventListener('click', ()=>{
+  if(!canViewResults()){ toast('Enter the correct coach passcode to view results.'); return; }
+  qs('#resultsCard').classList.remove('hidden');
+  renderResults();
+});
+qs('#closeResultsBtn').addEventListener('click', ()=>{
+  qs('#resultsCard').classList.add('hidden');
+});
+qs('#resetVotesBtn').addEventListener('click', ()=>{
+  if(!canViewResults()){ toast('Enter the correct coach passcode to reset.'); return; }
+  if(confirm('Are you sure you want to reset all votes?')){
+    store.reset();
+    renderResults();
+    toast('All votes have been reset.');
+  }
+});
+
+qs('#downloadCsvBtn').addEventListener('click', ()=>{
+  const { votes } = store.read();
+  const header = ['timestamp','player','pick1','pick2'];
+  const rows = votes.map(v=>[v.ts,v.name,v.pick1,v.pick2]);
+  const csv = [header, ...rows].map(r=>r.map(csvEscape).join(',')).join('\n');
+  const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'jersey_votes.csv'; a.click();
+  setTimeout(()=>URL.revokeObjectURL(url), 1500);
+});
+// --- Convenience: prefill coach passcode from URL (?passcode=....)
+(function(){
+  try{
+    const params = new URLSearchParams(location.search);
+    const pc = params.get('passcode');
+    if(pc){ qs('#accessCode').value = pc; }
+  }catch{}
+})();
+</script>
+</body>
+</html>
